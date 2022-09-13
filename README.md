@@ -4,6 +4,8 @@
 
 * **IMPORTANT:**
     * You must have python and the corresponding libraries installed to run this script.
+        * If you have Conda installed, simply run ```conda env create -f ril-cli.yml``` to create an environment with
+          the required dependencies.
     * Familiarize yourself with the Qualtrics form so that you know what inputs you should have in your files.
 * Create a .txt file with your name, community name, and building name, all according to the form and each on a separate
   line.
