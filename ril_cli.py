@@ -27,9 +27,11 @@ ra_building = pers_info_lines[2].strip()
 
 interactions_path = sys.argv[2]
 interactions_data = pd.read_csv(interactions_path)
+num_interactions = interactions_data.shape[0]
 
 for index, interaction in interactions_data.iterrows():
     start = time.time()
+
     time.sleep(2)
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"QR~QID36\"]")))
     res_com_dropdown = Select(driver.find_element(By.XPATH, "//*[@id=\"QR~QID36\"]"))
@@ -72,10 +74,6 @@ for index, interaction in interactions_data.iterrows():
     apt_dropdown = Select(driver.find_element(By.XPATH, "//*[@id=\"QR~QID79\"]"))
     apt_dropdown.select_by_visible_text(str(interaction["Apt"]))
 
-    time.sleep(1)
-    bedroom_dropdown = Select(driver.find_element(By.XPATH, "//*[@id=\"QR~QID91\"]"))
-    bedroom_dropdown.select_by_visible_text(str(interaction["Bedroom"]))
-
     interaction_date = str(interaction["mm-dd-yyyy"])
     driver.find_element(By.XPATH, "//*[@id=\"QR~QID3\"]").send_keys(interaction_date)
 
@@ -100,5 +98,7 @@ for index, interaction in interactions_data.iterrows():
     driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
 
     end = time.time()
+    print(f"Log {index+1} runtime:", (end - start))
 
-    print(end - start)
+    if index == num_interactions:
+        print("Success!")
