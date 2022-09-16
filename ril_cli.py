@@ -100,5 +100,5 @@ for index, interaction in interactions_data.iterrows():
     end = time.time()
     print(f"Log {index+1} runtime:", (end - start))
 
-    if index == num_interactions:
+    if index + 1 == num_interactions:
         print("Success!")
