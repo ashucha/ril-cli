@@ -1,6 +1,7 @@
 import math
 import sys
 import time
+import json
 
 import pandas as pd
 from selenium import webdriver
@@ -29,17 +30,22 @@ interactions_path = sys.argv[2]
 interactions_data = pd.read_csv(interactions_path)
 num_interactions = interactions_data.shape[0]
 
+building_ids = json.load(open("building_ids.json"))["building_ids"]
+building_id = building_ids.get(str(ra_building))
+
+floor_ids = json.load(open("floor_ids.json"))["floor_ids"]
+
 for index, interaction in interactions_data.iterrows():
     while True:
         try:
             start = time.time()
 
-            time.sleep(2)
+            time.sleep(1)
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"QR~QID36\"]")))
             res_com_dropdown = Select(driver.find_element(By.XPATH, "//*[@id=\"QR~QID36\"]"))
             res_com_dropdown.select_by_visible_text(str(ra_community))
 
-            time.sleep(2)
+            time.sleep(1)
             WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"NextButton\"]")))
             driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"QR~QID45\"]")))
@@ -48,32 +54,34 @@ for index, interaction in interactions_data.iterrows():
             name_dropdown = Select(driver.find_element(By.XPATH, "//*[@id=\"QR~QID45\"]"))
             name_dropdown.select_by_visible_text(str(ra_name))
 
-            time.sleep(2)
+            time.sleep(1)
             WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"NextButton\"]")))
             driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"QR~QID2\"]")))
+            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"QR~QID2\"]")))
 
             resident_name = interaction["Name"]
             driver.find_element(By.XPATH, "//*[@id=\"QR~QID2\"]").send_keys(resident_name)
 
-            building_dropdown = Select(driver.find_element(By.XPATH, "//*[@id=\"QR~QID39\"]"))
+            building_dropdown = Select(driver.find_element(By.XPATH, f"//*[@id=\"QR~QID39\"]"))
             building_dropdown.select_by_visible_text(str(ra_building))
 
-            time.sleep(2)
+            time.sleep(1)
             WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"NextButton\"]")))
             driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"QR~QID94\"]")))
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, f"//*[@id=\"QR~QID{building_id}\"]")))
 
-            floor_dropdown = Select(driver.find_element(By.XPATH, "//*[@id=\"QR~QID94\"]"))
-            floor_dropdown.select_by_index(int(interaction["Floor"]))
+            floor_dropdown = Select(driver.find_element(By.XPATH, f"//*[@id=\"QR~QID{building_id}\"]"))
+            floor_dropdown.select_by_visible_text(str(interaction["Floor"]))
 
-            time.sleep(2)
-            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"NextButton\"]")))
-            driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"QR~QID79\"]")))
+            floor_id = floor_ids.get(str(ra_building)).get(str(interaction["Floor"]))
 
             time.sleep(1)
-            apt_dropdown = Select(driver.find_element(By.XPATH, "//*[@id=\"QR~QID79\"]"))
+            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"NextButton\"]")))
+            driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, f"//*[@id=\"QR~QID{floor_id}\"]")))
+
+            time.sleep(1)
+            apt_dropdown = Select(driver.find_element(By.XPATH, f"//*[@id=\"QR~QID{floor_id}\"]"))
             apt_dropdown.select_by_visible_text(str(interaction["Apt"]))
 
             interaction_date = str(interaction["mm-dd-yyyy"])
@@ -85,27 +93,35 @@ for index, interaction in interactions_data.iterrows():
             for topic in str(interaction["Topics"]):
                 driver.find_element(By.XPATH, f"//*[@id=\"QID41-{topic}-label\"]").click()
 
-            time.sleep(2)
+            time.sleep(1)
             WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"NextButton\"]")))
             driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"QR~QID49\"]")))
+
+            if not math.isnan(interaction["Optional"]):
+                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"QR~QID49\"]")))
+
+                time.sleep(1)
+                driver.find_element(By.XPATH, "//*[@id=\"QR~QID49\"]").send_keys(
+                    str(interaction["Optional"]) if not math.isnan(float(interaction["Optional"])) else ""
+                )
 
             time.sleep(1)
-            driver.find_element(By.XPATH, "//*[@id=\"QR~QID49\"]").send_keys(
-                str(interaction["Optional"]) if not math.isnan(float(interaction["Optional"])) else ""
-            )
-
-            time.sleep(2)
             WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"NextButton\"]")))
             driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
 
             end = time.time()
             print(f"Log {index + 1} runtime:", (end - start))
 
+            time.sleep(2)
+
             if index + 1 == num_interactions:
                 print("Success!")
+                driver.quit()
 
         except Exception as e:
             print(e)
+            driver.close()
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            driver.get("https://gatech.co1.qualtrics.com/jfe/form/SV_3wMI1pXNJOwLJL8")
         else:
             break
