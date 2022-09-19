@@ -13,9 +13,11 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
+from plyer import notification
+
 options = Options()
 options.add_argument("start-maximized")
-# options.headless = True
+options.headless = True
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 driver.get("https://gatech.co1.qualtrics.com/jfe/form/SV_3wMI1pXNJOwLJL8")
 
@@ -32,6 +34,8 @@ num_interactions = interactions_data.shape[0]
 
 floor_ids = json.load(open("floor_ids.json"))["floor_ids"]
 building_id = floor_ids.get(str(ra_building)).get("id")
+
+runtime = 0
 
 for index, interaction in interactions_data.iterrows():
     while True:
@@ -66,7 +70,8 @@ for index, interaction in interactions_data.iterrows():
             time.sleep(1)
             WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"NextButton\"]")))
             driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, f"//*[@id=\"QR~QID{building_id}\"]")))
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, f"//*[@id=\"QR~QID{building_id}\"]")))
 
             floor_dropdown = Select(driver.find_element(By.XPATH, f"//*[@id=\"QR~QID{building_id}\"]"))
             floor_dropdown.select_by_visible_text(str(interaction["Floor"]))
@@ -76,7 +81,8 @@ for index, interaction in interactions_data.iterrows():
             time.sleep(1)
             WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//*[@id=\"NextButton\"]")))
             driver.find_element(By.XPATH, "//*[@id=\"NextButton\"]").click()
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, f"//*[@id=\"QR~QID{floor_id}\"]")))
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, f"//*[@id=\"QR~QID{floor_id}\"]")))
 
             time.sleep(1)
             apt_dropdown = Select(driver.find_element(By.XPATH, f"//*[@id=\"QR~QID{floor_id}\"]"))
@@ -110,14 +116,31 @@ for index, interaction in interactions_data.iterrows():
             end = time.time()
             print(f"Log {index + 1} runtime:", (end - start))
 
+            runtime += end - start
+
             time.sleep(2)
 
             if index + 1 == num_interactions:
                 print("Success!")
+                notification.notify(
+                    title="RIL CLI: Success!",
+                    message=f"""The script has executed successfully!
+                    Total runtime: {runtime}
+                    Average runtime: {runtime / (index + 1)}""",
+                    timeout=10
+                )
                 driver.quit()
 
         except Exception as e:
             print(e)
+
+            notification.notify(
+                title="RIL CLI: Unexpected Error",
+                message=f"""Error: {e}.
+                Try stopping and re-running the script if the issue persists.""",
+                timeout=10
+            )
+
             driver.close()
             driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
             driver.get("https://gatech.co1.qualtrics.com/jfe/form/SV_3wMI1pXNJOwLJL8")
