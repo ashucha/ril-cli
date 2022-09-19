@@ -30,10 +30,8 @@ interactions_path = sys.argv[2]
 interactions_data = pd.read_csv(interactions_path)
 num_interactions = interactions_data.shape[0]
 
-building_ids = json.load(open("building_ids.json"))["building_ids"]
-building_id = building_ids.get(str(ra_building))
-
 floor_ids = json.load(open("floor_ids.json"))["floor_ids"]
+building_id = floor_ids.get(str(ra_building)).get("id")
 
 for index, interaction in interactions_data.iterrows():
     while True:
